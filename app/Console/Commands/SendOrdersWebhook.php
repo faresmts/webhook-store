@@ -6,6 +6,7 @@ use App\Models\Pedido;
 use App\Models\Webhook;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log as FacadesLog;
+use Spatie\WebhookServer\WebhookCall;
 
 class SendOrdersWebhook extends Command
 {
@@ -32,6 +33,40 @@ class SendOrdersWebhook extends Command
     {
         FacadesLog::info('Webhook started');
 
+        $lastWebhook = Webhook::query()->latest()->first()->attributesToArray();
+        $lastWebhookTime = $lastWebhook['created_at'];
+        $lastOrder = Pedido::query()->where('created_at', '>', $lastWebhookTime)->latest()->first()->attributesToArray();
+        
+        if($lastOrder){
+
+            $newOrders = Pedido::query()
+            ->select()
+            ->join('lojas', 'pedidos.loja_id', '=', 'lojas.id')
+            ->where([
+                ['lojas.api_integration', '=', 1],
+                ['pedidos.created_at', '>', $lastWebhookTime],
+                ['lojas.callback_url', '!=', null]
+            ])
+            ->get();
+
+            if(sizeof($newOrders) > 0){
+                foreach($newOrders as $order){
+                    $data = $order->attributesToArray();
+                    WebhookCall::create()
+                    ->url($data['callback_url'])
+                    ->payload([
+                        'pedido_id' => $data['id'],
+                        'loja_id' => $data['loja_id'],
+                        'produto_id' => $data['produto_id'],
+                        'usuario_id' => $data['usuario_id'],
+                        'quantidade' => $data['quantidade'],
+                        'data' => $data['created_at']
+                    ])
+                    ->useSecret('teste')
+                    ->dispatch();
+                }
+            }
+        }
         
     }
 
