@@ -24,7 +24,7 @@ class PedidoFactory extends Factory
             'produto_id' => Produto::factory()->create(),
             'loja_id' => Loja::factory()->create(),
             'quantidade' => random_int(1, 100),
-            'created_at' => now(),
+            'created_at' => fake()->name(), 
             'updated_at' => now()
         ];
     }

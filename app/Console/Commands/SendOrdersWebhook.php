@@ -35,7 +35,7 @@ class SendOrdersWebhook extends Command
 
         $lastWebhook = Webhook::query()->latest()->first()->attributesToArray();
         $lastWebhookTime = $lastWebhook['created_at'];
-        $lastOrder = Pedido::query()->where('created_at', '>', $lastWebhookTime)->latest()->first()->attributesToArray();
+        $lastOrder = Pedido::query()->latest()->first();
         
         if($lastOrder){
 
@@ -66,8 +66,7 @@ class SendOrdersWebhook extends Command
                     ->dispatch();
                 }
             }
-        }
-        
+        }    
     }
 
 }
